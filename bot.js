@@ -17,7 +17,9 @@ function dist(a, b){
 // This function should return the distance between the closest points 
 // on the outside of the circles a and b. 
 function distSize(a, b) {
-    return dist(a, b) - a.size * 1.25 - b.size * 1.25;
+    var ret = dist(a, b) - a.size * 1.75 - b.size * 1.75;
+    ret = (ret < 1) ? 1 : ret;
+    return ret;
 }
 
 // This is the main function for the bot. The inputs to
@@ -38,8 +40,8 @@ function botImpl(flowers, enemies, bot) {
     var dy = 0;
 
     if (nextFlower) {
-        dx = bot.x - nextFlower.x;
-        dy = bot.y - nextFlower.y;
+        dx = bot.x - (nextFlower.x-5);
+        dy = bot.y - (nextFlower.y-5);
     }
 
 
@@ -73,18 +75,40 @@ function botImpl(flowers, enemies, bot) {
         oput.esize = enemies[0].size;
     }
 
+  
+
     // If closest enemy is too close (if he can split and eat (2x size?) you the distance is farther)
-    if (enemies[0] && ((enemies[0].size > bot.size * 2 && distSize(enemies[0], bot) < 1000) || (enemies[0].size > bot.size && distSize(enemies[0], bot) < 600))) {
-        var dx = enemies[0].x - bot.x;
-        var dy = enemies[0].y - bot.y;
+    if (enemies[0] && ((enemies[0].size > bot.size * 2.2 && distSize(enemies[0], bot) < 1000) || (enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 600))) {
+        dx = enemies[0].x - bot.x;
+        dy = enemies[0].y - bot.y;
+        console.log('far');
+
     }
 
-    // If there are two enemies move away from both
-    if (enemies[1] && (enemies[0].size > bot.size && distSize(enemies[0], bot) < 1000) && (enemies[1].size > bot.size && distSize(enemies[1], bot) < 1000)) {
-        var moveSlope = -(enemies[1].x - enemies[0].x) / (enemies[1].y - enemies[0].y + .0001);
-        var dx = 1;
-        var dy = moveSlope;
+   // If there are two enemies move away from both
+    if (enemies[1] && enemies[0] && (enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 1500) && (enemies[1].size > bot.size*1.1 && distSize(enemies[1], bot) < 1500)) {
+        var moveSlope = -(enemies[1].x - enemies[0].x) / (enemies[1].y - enemies[0].y + .00001);
+        dx = 1;
+        dy = moveSlope;
+        var theta1 = Math.atan2(dy, dx);
+        var next_pos = {};
+        next_pos.x = bot.x-Math.cos(theta1);
+        next_pos.y = bot.y-Math.sin(theta1);
+
+        if(dist(bot, enemies[0])>dist(next_pos, enemies[0])){
+            dx *= -1;
+            dy *= -1;
+        }
+        console.log('Double!');
     }
+
+    // If closest enemy is too close (if he can split and eat (2x size?) you the distance is farther)
+    if (enemies[0] && enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 200) {
+        dx = enemies[0].x - bot.x;
+        dy = enemies[0].y - bot.y;
+        console.log('close');
+    }
+   
 
     var theta = Math.atan2(dy, dx);
 
