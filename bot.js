@@ -22,6 +22,127 @@ function distSize(a, b) {
     return ret;
 }
 
+
+
+
+
+
+
+// output angle with best score chosen
+
+// Resolution (possible moves)
+var outputAngles = 32;
+
+// Array of threats
+var threats = [];
+
+/**** Threat:
+
+score: function(x, y, dir),
+x: int,
+y: int,
+size: uint,
+
+****/
+
+function enemy_threat(a){
+    var threat = {};
+    threat.x = a.x;
+    threat.y = a.y;
+    threat.size = a.size;
+    threat.score = function(bot, dir){
+        botOutX = -Math.cos(dir);
+        botOutY = -Math.sin(dir);
+        var next_pos = {};
+        next_pos.x = bot.x+botOutX;
+        next_pos.y= bot.y+botOutY;
+        next_pos.size = bot.size;
+        var dist_diff = distSize(bot, this) - distSize(next_pos, this);
+        var threat_dist = -dist_diff * (this.size - bot.size) / 10;
+        return threat_dist;
+    };
+    return threat;
+}
+
+function flower_threat(a){
+    var threat = {};
+    threat.x = a.x;
+    threat.y = a.y;
+    threat.size = a.size;
+    threat.score = function(bot, dir){
+        botOutX = -Math.cos(dir);
+        botOutY = -Math.sin(dir);
+        var m_bot = botOutY/botOutX+.000001;
+        var perp_m = -1/(m_bot+.000001);
+        var int_pos = {};
+        int_pos.x =  (a.y -  bot.y - perp_m*a.x + m_bot*bot.x)/(m_bot-perp_m); 
+        int_pos.y = m_bot * (x - bot.x) + bot.y;
+        int_pos.size = 1;
+        //var next_pos = {};
+        // next_pos.x = bot.x+botOutX;
+        // next_pos.y= bot.y+botOutY;
+        // next_pos.size = bot.size;
+        var dist_diff = dist(bot, this);
+        if(distSize(this, int_pos) < 5){
+            return dist_diff;
+        }else{
+            return 0;
+        }
+
+    };
+    return threat;
+}
+
+function wall_threat(){
+    var threat = {};
+    threat.x = 0;
+    threat.y = 0;
+    threat.size = 0;
+    threat.score = function(bot, dir){
+        botOutX = -Math.cos(dir);
+        botOutY = -Math.sin(dir);
+        var next_pos = {};
+        next_pos.x = bot.x+botOutX;
+        next_pos.y= bot.y+botOutY;
+        // next_pos.size = bot.size;
+        var dist_diff = dist(bot, 0) - dist(next_pos, 0);
+        var threat_dist = dist_diff / 10;
+        return threat_dist;
+    };
+    return threat;
+}
+
+function eval_dir(bot, dir){
+    var score = 0;
+    for(var j = 0; j < threats.length; j++){
+        score += threats[j].score(bot, dir);
+    }
+    console.log('score: ' + score);
+    return score;
+}
+
+function eval_all(bot){
+    var high_dir = 0.0;
+    var high_score = eval_dir(bot, 0.0);
+    for(var j = Math.PI*2/outputAngles; j < Math.PI*2; j += Math.PI*2/outputAngles){
+        var score = eval_dir(bot, j);
+        if(score > high_score){
+            high_dir = j;
+            high_score = score;
+        }
+    }
+    return high_dir;
+}
+
+
+
+
+
+
+
+
+
+
 // This is the main function for the bot. The inputs to
 // the bot are the three parameters to this function. Store your
 // outputs in botOutX and botOutY. Outputs are -1 to +1. 
@@ -29,91 +150,16 @@ function distSize(a, b) {
 // The current bot implementation overrides dx and dy when there's a greater priority,
 // (ie low priority at the top of function)
 function botImpl(flowers, enemies, bot) {
-    //move toward closest flower
-    flowers.sort(function(a, b) {
-        return dist(a, bot) - dist(b, bot);
-    });
-
-    var nextFlower = flowers[0];
-
-    var dx = 0;
-    var dy = 0;
-
-    if (nextFlower) {
-        dx = bot.x - (nextFlower.x-5);
-        dy = bot.y - (nextFlower.y-5);
+    for(var j = 0; j < flowers.length; j++){
+        threats.push(flower_threat(flowers[j]));
     }
-
-
-    // This keeps the bot away from the wall
-    if (bot.x < -4000 || bot.y < -4000 || bot.x > 4000 || bot.y > 4000) {
-        gotoCenter = true;
+    for(var j = 0; j < enemies.length; j++){
+      //  threats.push(enemy_threat(enemies[j]));
     }
-
-    if (bot.x > -2000 && bot.y > -2000 && bot.x < 2000 && bot.y < 2000) {
-        gotoCenter = false;
-    }
-
-    if (gotoCenter) {
-        dx = bot.x;
-        dy = bot.y;
-    }
-
-    enemies.sort(function(a, b) {
-        return distSize(a, bot) - distSize(b, bot);
-    });
-
-    // oput is a debugging object
-    oput.mX = bot.x;
-    oput.mY = bot.y;
-    oput.mSize = bot.size;
-
-    if (enemies[0]) {
-        oput.dist = distSize(enemies[0], bot);
-        oput.ex = enemies[0].x;
-        oput.ey = enemies[0].y;
-        oput.esize = enemies[0].size;
-    }
-
-  
-
-    // If closest enemy is too close (if he can split and eat (2x size?) you the distance is farther)
-    if (enemies[0] && ((enemies[0].size > bot.size * 2.2 && distSize(enemies[0], bot) < 1000) || (enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 600))) {
-        dx = enemies[0].x - bot.x;
-        dy = enemies[0].y - bot.y;
-        console.log('far');
-
-    }
-
-   // If there are two enemies move away from both
-    if (enemies[1] && enemies[0] && (enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 1500) && (enemies[1].size > bot.size*1.1 && distSize(enemies[1], bot) < 1500)) {
-        var moveSlope = -(enemies[1].x - enemies[0].x) / (enemies[1].y - enemies[0].y + .00001);
-        dx = 1;
-        dy = moveSlope;
-        var theta1 = Math.atan2(dy, dx);
-        var next_pos = {};
-        next_pos.x = bot.x-Math.cos(theta1);
-        next_pos.y = bot.y-Math.sin(theta1);
-
-        if(dist(bot, enemies[0])>dist(next_pos, enemies[0])){
-            dx *= -1;
-            dy *= -1;
-        }
-        console.log('Double!');
-    }
-
-    // If closest enemy is too close (if he can split and eat (2x size?) you the distance is farther)
-    if (enemies[0] && enemies[0].size > bot.size*1.1 && distSize(enemies[0], bot) < 200) {
-        dx = enemies[0].x - bot.x;
-        dy = enemies[0].y - bot.y;
-        console.log('close');
-    }
-   
-
-    var theta = Math.atan2(dy, dx);
-
-    botOutX = -Math.cos(theta);
-    botOutY = -Math.sin(theta);
+    //threats.push(wall_threat());
+    var dir = eval_all(bot);
+    botOutX = -Math.cos(dir);
+    botOutY = -Math.sin(dir);
 }
 
 
