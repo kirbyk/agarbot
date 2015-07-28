@@ -14,7 +14,7 @@ var threats = [];
 
 
 /**** THREAT PARAMS ******/
-var outputAngles = 8;
+var outputAngles = 8; //LIMITED
 var flower_distance = 800;
 var max_flower_score = 20;
 
@@ -165,12 +165,12 @@ function eval_all(bot){
 // (ie low priority at the top of function)
 function botImpl(flowers, enemies, bot) {
     if(bot !== 'undefined'){
-        flowers.sort(function(a, b){return dist(a, bot)-dist(b, bot);});
-        for(var j = 0; j < flowers.length && j < 2; j++){
+        //flowers.sort(function(a, b){return dist(a, bot)-dist(b, bot);});
+        for(var j = 0; j < flowers.length && j < 2; j++){ // LIMITED
             threats.push(flower_threat(flowers[j]));
         }
         for(var j = 0; j < enemies.length; j++){
-          //  threats.push(enemy_threat(enemies[j]));
+          //  threats.push(enemy_threat(enemies[j])); // LIMITED FOR TESTING
         }
         threats.push(wall_threat());
         var dir = eval_all(bot);
@@ -215,19 +215,21 @@ function bot_parse(state) {
         });
 
         botImpl(flowers, enemies, bot);
+
+        busy = false;
     
 }
 
 t.onmessage = function(a) {
    if(!busy){
         busy = true;
+        bot_parse(x);
         set_outs();
-        Ea();
-        Mb(a);
-        busy = false;
     }else{
         console.log('busymofo');
     }
+    Ea();
+    Mb(a);
 };
 
 function set_outs() {
