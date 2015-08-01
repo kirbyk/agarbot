@@ -265,22 +265,22 @@ function bot_parse(state) {
     
 }
 
-t.onmessage = function(a) {
+r.onmessage = function(a) {
    if(!busy){
         busy = true;
-        bot_parse(x);
+        bot_parse(v);
         set_outs();
     }else{
         console.log('busymofo');
     }
-    Ea();
-    Mb(a);
+    Ga();
+    Nb(a);
 };
 
  
 function set_outs() {
-    ja = screen_width * (botOutX+1) / 2;
-    ka = screen_height * (botOutY+1) / 2;
+    la = screen_width * (botOutX+1) / 2;
+    ma = screen_height * (botOutY+1) / 2;
 }
 
 J = document.getElementById("canvas");
